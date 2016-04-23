@@ -24,6 +24,10 @@ clear() {
     done
 }
 
+status() {
+    iptables -L 
+}
+
 if [[ ! "$cmd" =~ "" ]]; then
     echo "No command given"
     echo ${USAGE}
@@ -36,6 +40,9 @@ case "$cmd" in
             ;;
     "clear")
             clear
+            ;;
+    "status")
+            status
             ;;
     *)
         echo "Invalid argument"
