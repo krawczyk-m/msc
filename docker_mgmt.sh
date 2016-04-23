@@ -2,13 +2,13 @@
 
 USAGE="Usage: $0 (start|stop|restart|status)"
 
-IMG_NAME="ubuntu:16.04"
+IMG_NAME="msc"
 CONT_NAME=$2
 
 RUNNING=$(docker inspect --format="{{ .State.Running }}" ${CONT_NAME} 2> /dev/null)
 
 start_docker() {
-    DOCKER_START="docker run -dit --net=host --name=${CONT_NAME} ${IMG_NAME} /bin/bash"
+    DOCKER_START="docker run -dit --name=${CONT_NAME} ${IMG_NAME} /bin/bash"
     echo ${DOCKER_START}
     CONT_ID=$(${DOCKER_START})
 
@@ -20,6 +20,10 @@ stop_docker() {
     docker rm ${CONT_NAME} > /dev/null
 
     echo "Container ${CONT_NAME} has been stopped"
+}
+
+login() {
+    docker exec -it ${CONT_NAME} /bin/bash
 }
 
 if [[ $# != 2 ]]; then
@@ -49,6 +53,12 @@ case "$1" in
     "status")
         if [[ "${RUNNING}" =~ "true" ]]; then
             echo "Container ${CONT_NAME} is running"
+        else
+            echo "Container ${CONT_NAME} is not running"
+        fi ;;
+    "login")
+        if [[ "${RUNNING}" =~ "true" ]]; then
+            login
         else
             echo "Container ${CONT_NAME} is not running"
         fi ;;
