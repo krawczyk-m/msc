@@ -7,13 +7,9 @@ for the Master of Science dissertatation in the field of steganography.
 
 Required packages for node running scapy & nfqueue related scripts (suggested setup):
 
-..* system packages: 
-....* libnetfilter-queue-dev
-....* libnfnetlink-dev
-....* nfqueue-bindings-python
 ..* python-virtualenv for python package management:
 ....* scapy
-....* NetfilterQueue
+....* NetfilterQueue (compiled from: https://github.com/kti/python-netfilterqueue - needed for set_payload)
 
 ## Docker
 
