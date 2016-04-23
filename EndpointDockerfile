@@ -1,3 +1,18 @@
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y telnet iproute2 iputils-ping
+RUN apt-get update && apt-get install -y \
+    iproute2 \
+    iptables \
+    iputils-ping \
+    libnetfilter-queue-dev \
+    libnfnetlink-dev \
+    python-pip \
+    telnet \
+    wget unzip \
+    && wget https://github.com/kti/python-netfilterqueue/archive/master.zip -O nfqueue.zip \
+    && unzip nfqueue.zip \
+    && cd python-netfilterqueue-master \
+    && python setup.py install \
+    && pip install scapy \
+    && rm -rf nfqueue.zip python-netfilterqueue-master \
+    && apt-get purge -y --auto-remove wget unzip
