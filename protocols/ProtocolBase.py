@@ -11,8 +11,8 @@ class ProtocolBase(object):
     layer = ""
     field = ""
 
-    @staticmethod
-    def set(packet, bit_array):
+    @classmethod
+    def set(cls, packet, bit_array):
         """
         Sets the protocol bit(s) for the passed in packet
         :param packet:          the packet to manipulate
@@ -20,8 +20,8 @@ class ProtocolBase(object):
         """
         pass
 
-    @staticmethod
-    def get(packet, bits=0):
+    @classmethod
+    def get(cls, packet, bits=0):
         """
         Retrieves the value of the bits for the field the protocol operates on
         :param packet:      the packet to retrieve information from
