@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     libnetfilter-queue-dev \
     libnfnetlink-dev \
+    netcat-openbsd \
     python-pip \
     telnet \
     wget unzip \
@@ -16,3 +17,9 @@ RUN apt-get update && apt-get install -y \
     && pip install scapy \
     && rm -rf nfqueue.zip python-netfilterqueue-master \
     && apt-get purge -y --auto-remove wget unzip
+
+COPY entrypoint.sh /
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+CMD ["12345"]
