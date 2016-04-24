@@ -1,5 +1,5 @@
 
-class LayerNotFound(Exception):
+class LayerNotFoundError(Exception):
     def __init__(self, value):
         self.value = value
 

@@ -1,6 +1,6 @@
 from protocols.IPProtocol import IPProtocol
 from protocols.util.BitConverter import BitConverter
-from protocols.error.LayerNotFound import LayerNotFound
+from protocols.error.LayerNotFound import LayerNotFoundError
 
 
 class IPIdentification(IPProtocol):
@@ -22,7 +22,7 @@ class IPIdentification(IPProtocol):
     def get(cls, packet, bits=0):
         layer = packet.getlayer(cls.layer)
         if not layer:
-            raise LayerNotFound("Layer {} not found in packet".format(cls.layer))
+            raise LayerNotFoundError("Layer {} not found in packet".format(cls.layer))
         return getattr(layer, cls.field)
 
 
