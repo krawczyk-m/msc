@@ -4,9 +4,7 @@ class State:
     Sender states
     """
 
-    INIT = "init"
-    NOTIFY = "notify"
-    AWAIT_CONFIRMATION = "await_confirmation"
-    SEND = "send"
+    IDLE = "idle"
+    NOTIFY_SENT = "notify_sent"
     AWAIT_REPORT = "await_report"
-    CONFIRM_REPORT = "confirm_report"
+    FIN = "fin"

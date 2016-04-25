@@ -10,38 +10,60 @@ class Sender(object):
     notifier = None
 
     states = [
-        State.INIT,
-        State.NOTIFY,
-        State.AWAIT_CONFIRMATION,
-        State.SEND,
+        State.IDLE,
+        State.NOTIFY_SENT,
         State.AWAIT_REPORT,
-        State.CONFIRM_REPORT
+        State.FIN
     ]
 
-    def __init__(self, notifier):
+    state_methods = None
+
+    def __init__(self, notifier, receiver, messenger):
         self.notifier = notifier
+        self.receiver = receiver
+        self.messenger = messenger
 
-        self.machine = Machine(model=self, states=Sender.states, initial=State.INIT)
+        self.triggers = {
+            State.IDLE: "send_notify",
+            State.NOTIFY_SENT: "recv_notify_ack",
+            State.AWAIT_REPORT: "recv_report",
+        }
 
-        self.machine.add_transition(trigger="run", source=State.INIT, dest=State.NOTIFY)
-        self.machine.on_exit_init('exit_init')
+        self.machine = Machine(model=self, states=Sender.states, initial=State.IDLE)
 
-        self.machine.on_enter_notify("enter_notify")
-        self.machine.add_transition(trigger="notify", source=State.NOTIFY, dest=State.AWAIT_CONFIRMATION)
+        self.machine.add_transition(trigger="send_notify", source=State.IDLE, dest=State.NOTIFY_SENT)
+        self.machine.on_exit_idle("notify")
 
-        self.machine.on_enter_await_confirmation("enter_await_confirmation")
+        self.machine.add_transition(trigger="recv_notify_ack", source=State.NOTIFY_SENT, dest=State.AWAIT_REPORT,
+                                    conditions=["recvd_notify_ack"])
+        self.machine.on_exit_notify_sent("send_message")
 
-    def exit_init(self):
-        print "Initialised sender"
-        # time.sleep(1)
+        self.machine.add_transition(trigger="recv_message_ack", source=State.AWAIT_REPORT, dest=State.FIN,
+                                    conditions=["recvd_message_ack"])
+        self.machine.on_exit_await_report("confirm")
 
-    def enter_notify(self):
+    def run(self):
+        while self.state != State.FIN:
+            trigger = self.triggers[self.state]
+            getattr(self, trigger)()
+            time.sleep(1)
+
+    def notify(self):
         print "Notifying"
         self.notifier.notify()
-        self.notify()
 
-    def enter_await_confirmation(self):
+    def recvd_notify_ack(self):
+        return self.receiver.receive()
+
+    def send_message(self):
+        print "Sending message"
+        self.messenger.send()
+
+    def recvd_message_ack(self):
+        print "Recv message ack"
         pass
 
+    def confirm(self):
+        self.notifier.notify()
 
 
