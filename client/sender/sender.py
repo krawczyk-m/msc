@@ -6,8 +6,12 @@ from states import State
 
 
 class Sender(object):
-
-    notifier = None
+    """
+    Class representing the endpoint of the steganographic communication initiating
+    the steganographic connection setup.
+    """
+    messenger = None
+    transmitter = None
 
     states = [
         State.IDLE,
@@ -16,12 +20,18 @@ class Sender(object):
         State.FIN
     ]
 
-    state_methods = None
+    def __init__(self, messenger, transmitter):
+        """
 
-    def __init__(self, notifier, receiver, messenger):
-        self.notifier = notifier
-        self.receiver = receiver
+        :param messenger:       object responsible for communicating the desire of setting up a covert channel
+                                should have:
+                                notify() - notifies the other endpoint that is about to start sending stegano packets
+                                receive() - listens for and receives confirmations of notify()
+        :param transmitter:     object responsible for handling the steganographic communication
+        :return:
+        """
         self.messenger = messenger
+        self.transmitter = transmitter
 
         self.triggers = {
             State.IDLE: "send_notify",
@@ -46,24 +56,22 @@ class Sender(object):
         while self.state != State.FIN:
             trigger = self.triggers[self.state]
             getattr(self, trigger)()
-            time.sleep(1)
 
     def notify(self):
         print "Notifying"
-        self.notifier.notify()
+        self.messenger.notify()
 
     def recvd_notify_ack(self):
-        return self.receiver.receive()
+        return self.messenger.receive()
 
     def send_message(self):
         print "Sending message"
         self.messenger.send()
 
     def recvd_message_ack(self):
-        print "Recv message ack"
-        pass
+        return self.messenger.receive()
 
     def confirm(self):
-        self.notifier.notify()
+        self.transmitter.notify()
 
 

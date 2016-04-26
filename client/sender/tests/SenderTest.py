@@ -9,23 +9,20 @@ from client.sender.states import State
 class SenderTest(unittest.TestCase):
 
     def setUp(self):
-        self.notifier = Mock()
-        self.notifier.notify = MagicMock()
-
-        self.receiver = Mock()
-        self.receiver.receive = MagicMock()
-
         self.messenger = Mock()
-        self.messenger.send = MagicMock()
+        self.messenger .notify = MagicMock()
 
-        self.sender = Sender(notifier=self.notifier, receiver=self.receiver, messenger=self.messenger)
+        self.transmitter = Mock()
+        self.transmitter.send = MagicMock()
+
+        self.sender = Sender(messenger=self.messenger, transmitter=self.transmitter)
 
     def test_after_create_idle(self):
         self.assertEqual(State.IDLE, self.sender.state)
 
     def test_should_notify_and_transition(self):
         self.sender.send_notify()
-        self.sender.notifier.notify.assert_called_once()
+        self.sender.messenger.notify.assert_called_once()
         self.assertEqual(State.NOTIFY_SENT, self.sender.state)
 
     def test_should_stay_in_notify_sent(self):
@@ -60,5 +57,5 @@ class SenderTest(unittest.TestCase):
         self.sender.send_notify()
         self.sender.recv_notify_ack()
         self.sender.recv_message_ack()
-        self.assertEqual(2, len(self.sender.notifier.mock_calls))
+        self.assertEqual(2, len(self.sender.messenger.mock_calls))
         self.assertEqual(State.FIN, self.sender.state)
