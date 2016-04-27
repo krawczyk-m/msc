@@ -66,12 +66,12 @@ class Sender(object):
 
     def send_message(self):
         print "Sending message"
-        self.messenger.send()
+        self.transmitter.send()
 
     def recvd_message_ack(self):
         return self.messenger.receive()
 
     def confirm(self):
-        self.transmitter.notify()
+        self.messenger.notify()
 
 

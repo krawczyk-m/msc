@@ -39,7 +39,7 @@ class SenderTest(unittest.TestCase):
         self.sender.recv_notify_ack()
 
         self.assertEqual(State.AWAIT_REPORT, self.sender.state)
-        self.sender.messenger.send.assert_called_once()
+        self.sender.transmitter.send.assert_called_once()
 
     def test_should_stay_in_await_report(self):
         self.sender.recvd_notify_ack = MagicMock(return_value=True)
