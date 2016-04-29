@@ -28,7 +28,6 @@ class Sender(object):
                                 notify() - notifies the other endpoint that is about to start sending stegano packets
                                 receive() - listens for and receives confirmations of notify()
         :param transmitter:     object responsible for handling the steganographic communication
-        :return:
         """
         self.messenger = messenger
         self.transmitter = transmitter
