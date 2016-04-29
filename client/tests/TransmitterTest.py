@@ -1,6 +1,8 @@
 import unittest
+
 from scapy.layers.inet import IP
-from client.sender.transmitter import Transmitter
+
+from client.transmitter import Transmitter
 from protocols.IPIdentification import IPIdentification
 
 
