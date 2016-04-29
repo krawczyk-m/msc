@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USAGE="Usage: $0 (start|stop|restart|status)"
+USAGE="Usage: $0 (start|stop|restart|status) <container_name>"
 
 IMG_NAME="msc"
 CONT_NAME=$2
