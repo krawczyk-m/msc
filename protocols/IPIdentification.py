@@ -1,6 +1,6 @@
 from protocols.IPProtocol import IPProtocol
 from protocols.util.BitConverter import BitConverter
-from protocols.error.LayerNotFound import LayerNotFoundError
+from protocols.error.LayerNotFoundError import LayerNotFoundError
 
 
 class IPIdentification(IPProtocol):
@@ -17,12 +17,12 @@ class IPIdentification(IPProtocol):
         setattr(packet, cls.field, BitConverter.int(bit_array))
         return packet
 
-    # TODO use bits limiting
+    # TODO use bits limiting - it might be so that we use less bits than are available in the protocol e.g. only 4 bits for IPIdentification
     @classmethod
     def get(cls, packet, bits=0):
         layer = packet.getlayer(cls.layer)
         if not layer:
             raise LayerNotFoundError("Layer {} not found in packet".format(cls.layer))
-        return getattr(layer, cls.field)
+        return BitConverter.bit_array(getattr(layer, cls.field))
 
 

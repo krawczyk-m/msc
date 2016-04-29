@@ -30,3 +30,10 @@ class IPIdentificationTest(unittest.TestCase):
         array = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
         modified = IPIdentification.set(self.packet, array)
         self.assertEqual(2**16 - 2, modified.id)
+
+    def test_get_(self):
+        array = [1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1]
+        modified = IPIdentification.set(self.packet, array)
+        retrieved_array = IPIdentification.get(modified)
+
+        self.assertEqual(retrieved_array, array)
