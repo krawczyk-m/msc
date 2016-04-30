@@ -1,4 +1,5 @@
 import unittest
+import ConfigParser
 
 from mock import MagicMock
 from mock import Mock
@@ -17,7 +18,10 @@ class ReceiverUnitTest(unittest.TestCase):
         self.transmitter = Mock()
         self.transmitter.send = MagicMock()
 
-        self.receiver = Receiver(messenger=self.messenger, transmitter=self.transmitter)
+        self.config = ConfigParser.ConfigParser()
+        self.config.read('config.conf')
+
+        self.receiver = Receiver(config=self.config, messenger=self.messenger, transmitter=self.transmitter)
 
     def test_after_create_idle(self):
         self.assertEqual(State.IDLE, self.receiver.state)

@@ -1,3 +1,9 @@
+from netfilterqueue import NetfilterQueue
+from scapy.layers.inet import IP
+
+import threading
+import time
+
 from transitions import Machine
 from states import State
 from client.messages.Messages import Messages
@@ -10,7 +16,9 @@ class Receiver(object):
     """
     messenger = None
     transmitter = None
-    steganogram = None
+    steganogram = []
+
+    listening_thread = None
 
     states = [
         State.IDLE,
@@ -20,8 +28,8 @@ class Receiver(object):
         State.FIN
     ]
 
-    def __init__(self, messenger, transmitter):
-        """
+    def __init__(self, config, messenger, transmitter):
+        """self._handle_outgoing_packets
         :param messenger:       object responsible for listening for steganographic connection initiation notificaiton
                                 from another endpoint
                                 should have:
@@ -29,8 +37,11 @@ class Receiver(object):
                                 notify() - for sending acknowledgements
         :param transmitter:     object responsible for handling the steganographic communication - sending/receiving bits
         """
+        self.config = config
         self.messenger = messenger
         self.transmitter = transmitter
+
+        self._load_config()
 
         self.triggers = {
             State.IDLE: "await_notify",
@@ -55,15 +66,13 @@ class Receiver(object):
                                     dest=State.FIN, conditions=["recvd_report_ack"])
 
     def run(self):
+        self.listening_thread = threading.Thread(name="ListenThread", target=self._nfqueue_receive)
+        self.listening_thread.start()
+
         while self.state != State.LISTEN:
             print self.receiver.state
             trigger = self.triggers[self.state]
             getattr(self, trigger)()
-
-        # TODO
-        # reconfigure iptables
-        # set up handler
-        # add cleanup in keyboardinterrupt
 
     def recvd_notify(self):
         message = self.messenger.receive()
@@ -79,11 +88,25 @@ class Receiver(object):
     # TODO report needs two values - positive and negative
     # TODO compare if received steganogram is as expected
     def send_report(self):
-        print "Received steganogram: {}. Sending report".format(self.steganogram)
+        print "Received steganogram: {}. Sending report".format(reduce(lambda x, y: x + y, self.steganogram, ""))
         self.messenger.notify(Messages.REPORT)
 
     def recvd_report_ack(self):
         message = self.messenger.receive()
         return message == Messages.REPORT_ACK
+
+    def _nfqueue_receive(self):
+        self.nfqueue = NetfilterQueue()
+        self.nfqueue.bind(self.listen_queue_num, self._handle_incoming_packets)
+
+    def _handle_incoming_packets(self, pkt):
+        if self.state is State.LISTEN:
+            ip_packet = IP(pkt)
+            self.steganogram = self.transmitter.extract(ip_packet)
+        pkt.accept()
+
+    def _load_config(self):
+        self.expected_steganogram = self.config.get("Steg", "steganogram")
+        self.listen_queue_num = self.config.get("NFQueue", "listen_queue_num")
 
 
