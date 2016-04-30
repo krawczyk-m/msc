@@ -6,7 +6,7 @@ from client.transmitter import Transmitter
 from protocols.IPIdentification import IPIdentification
 
 
-class TransmitterTest(unittest.TestCase):
+class TransmitterUnitTest(unittest.TestCase):
 
     def setUp(self):
         self.packet = IP()
