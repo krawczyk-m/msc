@@ -1,3 +1,9 @@
+from netfilterqueue import NetfilterQueue
+from scapy.layers.inet import IP
+
+import threading
+import time
+
 from transitions import Machine
 from states import State
 from client.messages.Messages import Messages
@@ -12,6 +18,8 @@ class Sender(object):
     messenger = None
     transmitter = None
     steganogram = None
+
+    sending_thread = None
 
     states = [
         State.IDLE,
@@ -34,7 +42,7 @@ class Sender(object):
         self.messenger = messenger
         self.transmitter = transmitter
 
-        self.steganogram = self.config.get("Steg", "steganogram")
+        self._load_config()
 
         self.triggers = {
             State.IDLE: "send_notify",
@@ -60,6 +68,9 @@ class Sender(object):
         self.machine.on_exit_await_report("send_report_ack")
 
     def run(self):
+        self.sending_thread = threading.Thread(name="SendThread", target=self._nfqueue_send)
+        self.sending_thread.start()
+
         while self.state != State.FIN:
             trigger = self.triggers[self.state]
             getattr(self, trigger)()
@@ -69,7 +80,7 @@ class Sender(object):
         self.messenger.notify(Messages.NOTIFY)
 
     def recvd_notify_ack(self):
-        return self.messenger.receive()
+        return self.messenger.receive() == Messages.NOTIFY_ACK
 
     def sent_steg(self):
         return self.steganogram is None
@@ -81,4 +92,20 @@ class Sender(object):
         print "Sending report ack"
         self.messenger.notify(Messages.REPORT_ACK)
 
+    def _nfqueue_send(self):
+        self.nfqueue = NetfilterQueue()
+        self.nfqueue.bind(self.send_queue_num, self._handle_outgoing_packets)
+        self.nfqueue.run()
+
+    def _handle_outgoing_packets(self, pkt):
+        if self.state is State.LISTEN:
+            ip_packet = IP(pkt)
+            ip_packet = self.transmitter.embed(ip_packet, self.steganogram)
+            self.steganogram = None
+            pkt.set_payload(str(ip_packet))
+        pkt.accept()
+
+    def _load_config(self):
+        self.steganogram = self.config.get("Steg", "steganogram")
+        self.send_queue_num = self.config.get("NFQueue", "send_queue_num")
 
