@@ -12,7 +12,7 @@ class RabbitMQClient(object):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(self.rabbit_host))
         self.channel = self.connection.channel()
 
-        self.channel.basic_consume(self._receive, no_ack=True, queue=self.sender_full_queue_name)
+        self.channel.basic_consume(self._receive, no_ack=True, queue=self.inbound_queue)
         self.consume_thread = threading.Thread(target=self._consume)
         self.consume_thread.start()
 
@@ -30,7 +30,7 @@ class RabbitMQClient(object):
 
     def notify(self, message):
         self.channel.basic_publish(exchange='',
-                                   routing_key=self.receiver_full_queue_name,
+                                   routing_key=self.outbound_queue,
                                    body=message)
 
     def join(self):
@@ -40,11 +40,6 @@ class RabbitMQClient(object):
 
     # TODO try to do this with RPC queues...
     def _load_config(self):
-        self.host = self.config.get("General", "host")
-        self.peer_address = self.config.get("Steg", "peer")
         self.rabbit_host = self.config.get("RabbitMQ", "host")
-
-        sender_queue_name = self.config.get("RabbitMQ", "sender_queue_name")
-        receiver_queue_name = self.config.get("RabbitMQ", "receiver_queue_name")
-        self.sender_full_queue_name = "{}_{}".format(self.host, sender_queue_name)
-        self.receiver_full_queue_name = "{}_{}".format(self.peer_address, receiver_queue_name)
+        self.outbound_queue = self.config.get("RabbitMQ", "outbound_queue")
+        self.inbound_queue = self.config.get("RabbitMQ", "inbound_queue")
