@@ -6,7 +6,7 @@ from client.sender.sender import Sender
 from client.sender.states import State
 
 
-class SenderTest(unittest.TestCase):
+class SenderUnitTest(unittest.TestCase):
 
     def setUp(self):
         self.messenger = Mock()
