@@ -10,6 +10,7 @@ class Receiver(object):
     """
     messenger = None
     transmitter = None
+    steganogram = None
 
     states = [
         State.IDLE,
@@ -55,6 +56,7 @@ class Receiver(object):
 
     def run(self):
         while self.state != State.LISTEN:
+            print self.receiver.state
             trigger = self.triggers[self.state]
             getattr(self, trigger)()
 
@@ -68,14 +70,16 @@ class Receiver(object):
         return message == Messages.NOTIFY
 
     def send_notify_ack(self):
+        print "Received notify. Sending ACK"
         self.messenger.notify(Messages.NOTIFY_ACK)
 
     def recvd_steg(self):
-        # TODO implement checking whether specific bits are set in packet
-        pass
+        return self.steganogram is not None
 
     # TODO report needs two values - positive and negative
+    # TODO compare if received steganogram is as expected
     def send_report(self):
+        print "Received steganogram: {}. Sending report".format(self.steganogram)
         self.messenger.notify(Messages.REPORT)
 
     def recvd_report_ack(self):
