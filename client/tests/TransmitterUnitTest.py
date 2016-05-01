@@ -15,7 +15,7 @@ class TransmitterTest(unittest.TestCase):
         self.transmitter = Transmitter(protocols=[IPIdentification])
 
     def test_round_trip_single(self):
-        bit_array = [1, 0, 0, 1, 1]
+        bit_array = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.packet = self.transmitter.embed(self.packet, bit_array)
         retrieved_bit_array = self.transmitter.extract(self.packet)
 

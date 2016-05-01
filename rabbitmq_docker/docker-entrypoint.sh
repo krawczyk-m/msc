@@ -143,12 +143,9 @@ if [ "$1" = 'rabbitmq-server' ]; then
   # must be run as root, because needs a write to /var/run/
   # gosu root available through `chmod +s /usr/local/bin/gosu` in Dockerfile
   gosu root service rabbitmq-server start
+  rabbitmqadmin declare queue name=172.17.0.2_inbound_queue durable=true
 
-  rabbitmqadmin declare queue name=172.17.0.2_sender_queue durable=true
-  rabbitmqadmin declare queue name=172.17.0.2_receiver_queue durable=true
-
-  rabbitmqadmin declare queue name=172.17.0.3_sender_queue durable=true
-  rabbitmqadmin declare queue name=172.17.0.3_receiver_queue durable=true
+  rabbitmqadmin declare queue name=172.17.0.3_inbound_queue durable=true
 
   gosu root service rabbitmq-server stop
 fi

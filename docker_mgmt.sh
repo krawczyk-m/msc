@@ -9,7 +9,8 @@ RUNNING=$(docker inspect --format="{{ .State.Running }}" ${CONT_NAME} 2> /dev/nu
 
 start_docker() {
     MSC_DIR=/home/kravvcu/proj/msc
-    DOCKER_START="docker run -dit -v ${MSC_DIR}:/opt/msc --cap-add=NET_ADMIN --name=${CONT_NAME} --hostname=${CONT_NAME} ${IMG_NAME}"
+    VENV_DIR=/home/kravvcu/proj/msc_venv
+    DOCKER_START="docker run -dit -v ${MSC_DIR}:/opt/msc -v ${VENV_DIR}:/opt/msc_venv --cap-add=NET_ADMIN --name=${CONT_NAME} --hostname=${CONT_NAME} ${IMG_NAME}"
     echo ${DOCKER_START}
     CONT_ID=$(${DOCKER_START})
 
