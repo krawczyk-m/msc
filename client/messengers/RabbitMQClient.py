@@ -12,20 +12,10 @@ class RabbitMQClient(object):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(self.rabbit_host))
         self.channel = self.connection.channel()
 
-        self.channel.basic_consume(self._receive, no_ack=True, queue=self.inbound_queue)
-        self.consume_thread = threading.Thread(target=self._consume)
-        self.consume_thread.start()
-
-    def _consume(self):
-        self.channel.start_consuming()
-
-    def _receive(self, ch, method, properties, body):
-        self.response = body
-
     def receive(self):
         self.response = None
         while self.response is None:
-            self.connection.process_data_events()
+            self.response = self.channel.basic_get(queue=self.inbound_queue, no_ack=True)[2]
         return self.response
 
     def notify(self, message):
