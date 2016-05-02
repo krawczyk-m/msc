@@ -1,3 +1,8 @@
+from scapy.layers.inet import IP
+from scapy.layers.inet import TCP
+from scapy.layers.inet import UDP
+from scapy.layers.inet import ICMP
+
 
 class Transmitter(object):
     """
@@ -26,7 +31,7 @@ class Transmitter(object):
         """
         for protocol in self.protocols:
             packet = protocol.set(packet, bit_array)
-        return packet
+        return self._clear_chksums(packet)
 
     def extract(self, packet):
         """
@@ -38,3 +43,15 @@ class Transmitter(object):
         for protocol in self.protocols:
             bit_array.extend(protocol.get(packet))
         return bit_array
+
+    @staticmethod
+    def _clear_chksums(packet):
+        if packet.haslayer(IP):
+            del packet[IP].chksum
+        if packet.haslayer(TCP):
+            del packet[TCP].chksum
+        if packet.haslayer(UDP):
+            del packet[UDP].chksum
+        if packet.haslayer(ICMP):
+            del packet[ICMP].chksum
+        return packet
