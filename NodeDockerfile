@@ -9,12 +9,14 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     python-pip \
     telnet \
+    vim \
     wget unzip \
     && wget https://github.com/kti/python-netfilterqueue/archive/master.zip -O nfqueue.zip \
     && unzip nfqueue.zip \
     && cd python-netfilterqueue-master \
     && python setup.py install \
     && pip install scapy \
+    && pip install transitions \
     && rm -rf nfqueue.zip python-netfilterqueue-master \
     && apt-get purge -y --auto-remove wget unzip
 

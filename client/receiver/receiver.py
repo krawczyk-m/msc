@@ -1,6 +1,17 @@
+from netfilterqueue import NetfilterQueue
+from scapy.layers.inet import IP
+
+import ConfigParser
+import threading
+import time
+
 from transitions import Machine
 from states import State
 from client.messages.Messages import Messages
+
+from client.messengers.RabbitMQClient import RabbitMQClient
+from client.transmitter import Transmitter
+from protocols.IPIdentification import IPIdentification
 
 
 class Receiver(object):
@@ -10,7 +21,9 @@ class Receiver(object):
     """
     messenger = None
     transmitter = None
-    steganogram = None
+    steganogram = []
+
+    listening_thread = None
 
     states = [
         State.IDLE,
@@ -20,8 +33,8 @@ class Receiver(object):
         State.FIN
     ]
 
-    def __init__(self, messenger, transmitter):
-        """
+    def __init__(self, config, messenger, transmitter):
+        """self._handle_outgoing_packets
         :param messenger:       object responsible for listening for steganographic connection initiation notificaiton
                                 from another endpoint
                                 should have:
@@ -29,8 +42,11 @@ class Receiver(object):
                                 notify() - for sending acknowledgements
         :param transmitter:     object responsible for handling the steganographic communication - sending/receiving bits
         """
+        self.config = config
         self.messenger = messenger
         self.transmitter = transmitter
+
+        self._load_config()
 
         self.triggers = {
             State.IDLE: "await_notify",
@@ -55,35 +71,67 @@ class Receiver(object):
                                     dest=State.FIN, conditions=["recvd_report_ack"])
 
     def run(self):
-        while self.state != State.LISTEN:
-            print self.receiver.state
+        self.listening_thread = threading.Thread(name="ListenThread", target=self._nfqueue_receive)
+        self.listening_thread.start()
+
+        while self.state != State.FIN:
+            print str(self.state)
             trigger = self.triggers[self.state]
             getattr(self, trigger)()
-
-        # TODO
-        # reconfigure iptables
-        # set up handler
-        # add cleanup in keyboardinterrupt
+            time.sleep(2)  # for presentation purposes on seminar
 
     def recvd_notify(self):
         message = self.messenger.receive()
+        print "Received message: {}".format(message)
         return message == Messages.NOTIFY
 
     def send_notify_ack(self):
-        print "Received notify. Sending ACK"
+        print "Sending {}".format(Messages.NOTIFY_ACK)
         self.messenger.notify(Messages.NOTIFY_ACK)
 
     def recvd_steg(self):
-        return self.steganogram is not None
+        return len(self.steganogram) != 0
 
     # TODO report needs two values - positive and negative
     # TODO compare if received steganogram is as expected
     def send_report(self):
-        print "Received steganogram: {}. Sending report".format(self.steganogram)
+        print "Received steganogram: {}. Sending {}".format(reduce(lambda x, y: str(x) + str(y), self.steganogram, ""),
+                                                            Messages.REPORT)
         self.messenger.notify(Messages.REPORT)
 
     def recvd_report_ack(self):
         message = self.messenger.receive()
-        return message == Messages.REPORT_ACK
+        if message == Messages.REPORT_ACK:
+            print "Received {}. Ending conversation".format(Messages.REPORT_ACK)
+            return True
+        return False
 
+    def _nfqueue_receive(self):
+        self.nfqueue = NetfilterQueue()
+        self.nfqueue.bind(self.listen_queue_num, self._handle_incoming_packets)
+        self.nfqueue.run()
 
+    def _handle_incoming_packets(self, pkt):
+        ip_packet = IP(pkt.get_payload())
+        print "Handling incoming packet."
+        if self.state is State.LISTEN:
+            self.steganogram = self.transmitter.extract(ip_packet)
+        pkt.accept()
+
+    def _load_config(self):
+        self.expected_steganogram = self.config.get("Steg", "steganogram")
+        self.listen_queue_num = int(self.config.get("NFQueue", "listen_queue_num"))
+
+if __name__ == "__main__":
+    config = ConfigParser.ConfigParser()
+    config.read('config.conf')
+
+    messenger = RabbitMQClient(config)
+    transmitter = Transmitter(protocols=[IPIdentification])
+
+    receiver = Receiver(config, messenger, transmitter)
+
+    try:
+        receiver.run()
+    except KeyboardInterrupt:
+        print "Interrupted"

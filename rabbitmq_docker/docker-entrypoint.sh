@@ -144,8 +144,11 @@ if [ "$1" = 'rabbitmq-server' ]; then
   # gosu root available through `chmod +s /usr/local/bin/gosu` in Dockerfile
   gosu root service rabbitmq-server start
 
-  # DSAPM integration tests
-  rabbitmqadmin declare queue name=send durable=true
+  rabbitmqadmin declare queue name=172.17.0.2_sender_queue durable=true
+  rabbitmqadmin declare queue name=172.17.0.2_receiver_queue durable=true
+
+  rabbitmqadmin declare queue name=172.17.0.3_sender_queue durable=true
+  rabbitmqadmin declare queue name=172.17.0.3_receiver_queue durable=true
 
   gosu root service rabbitmq-server stop
 fi

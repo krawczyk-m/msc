@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# check if current directory contains the client and protocol modules which will be mounted along with parent dir
+
+if [ ! -d "${PWD}/client" ] || [ ! -d "${PWD}/protocols" ]
+then
+    echo "Current directory ${PWD} does not contain at least one of: client or protocol modules"
+    exit 1
+fi
+
 USAGE="Usage: $0 (start|stop|restart|status) <container_name>"
 
 IMG_NAME="msc"
@@ -8,7 +16,8 @@ CONT_NAME=$2
 RUNNING=$(docker inspect --format="{{ .State.Running }}" ${CONT_NAME} 2> /dev/null)
 
 start_docker() {
-    DOCKER_START="docker run -dit --cap-add=NET_ADMIN --name=${CONT_NAME} --hostname=${CONT_NAME} ${IMG_NAME}"
+    MSC_DIR="${PWD}"
+    DOCKER_START="docker run -dit -v ${MSC_DIR}:/opt/msc --cap-add=NET_ADMIN --name=${CONT_NAME} --hostname=${CONT_NAME} ${IMG_NAME}"
     echo ${DOCKER_START}
     CONT_ID=$(${DOCKER_START})
 
