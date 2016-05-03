@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     python-pip \
     telnet \
+    vim \
     wget unzip \
     && wget https://github.com/kti/python-netfilterqueue/archive/master.zip -O nfqueue.zip \
     && unzip nfqueue.zip \
