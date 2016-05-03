@@ -1,12 +1,17 @@
 from netfilterqueue import NetfilterQueue
 from scapy.layers.inet import IP
 
+import ConfigParser
 import threading
 import time
 
 from transitions import Machine
 from states import State
 from client.messages.Messages import Messages
+
+from client.messengers.RabbitMQClient import RabbitMQClient
+from client.transmitter import Transmitter
+from protocols.IPIdentification import IPIdentification
 
 
 class Sender(object):
@@ -72,24 +77,35 @@ class Sender(object):
         self.sending_thread.start()
 
         while self.state != State.FIN:
+            print str(self.state)
             trigger = self.triggers[self.state]
             getattr(self, trigger)()
+            time.sleep(2)  # for presentation purposes on seminar
 
     def notify(self):
-        print "Notifying"
+        print "Sending {}".format(Messages.NOTIFY)
         self.messenger.notify(Messages.NOTIFY)
 
     def recvd_notify_ack(self):
-        return self.messenger.receive() == Messages.NOTIFY_ACK
+        if self.messenger.receive() == Messages.NOTIFY_ACK:
+            print "Received {}. Will embed steganogram in next packet".format(Messages.NOTIFY_ACK)
+            return True
+        return False
 
     def sent_steg(self):
-        return self.steganogram is None
+        if self.steganogram is None:
+            print "Steganogram embedded. Waiting for {}".format(Messages.REPORT)
+            return True
+        return False
 
     def recvd_report(self):
-        return self.messenger.receive()
+        if self.messenger.receive() == Messages.REPORT:
+            print "Received {}".format(Messages.REPORT)
+            return True
+        return False
 
     def send_report_ack(self):
-        print "Sending report ack"
+        print "Sending {}. Ending conversation".format(Messages.REPORT_ACK)
         self.messenger.notify(Messages.REPORT_ACK)
 
     def _nfqueue_send(self):
@@ -98,14 +114,29 @@ class Sender(object):
         self.nfqueue.run()
 
     def _handle_outgoing_packets(self, pkt):
+        print "Handling outgoing packet."
         if self.state is State.LISTEN:
-            ip_packet = IP(pkt)
+            ip_packet = IP(pkt.get_payload())
             ip_packet = self.transmitter.embed(ip_packet, self.steganogram)
             self.steganogram = None
             pkt.set_payload(str(ip_packet))
         pkt.accept()
 
     def _load_config(self):
-        self.steganogram = self.config.get("Steg", "steganogram")
-        self.send_queue_num = self.config.get("NFQueue", "send_queue_num")
+        string_steg = self.config.get("Steg", "steganogram")
+        self.steganogram = [int(x) for x in string_steg]
+        self.send_queue_num = int(self.config.get("NFQueue", "send_queue_num"))
 
+if __name__ == "__main__":
+    config = ConfigParser.ConfigParser()
+    config.read('config.conf')
+
+    messenger = RabbitMQClient(config)
+    transmitter = Transmitter(protocols=[IPIdentification])
+
+    sender = Sender(config, messenger, transmitter)
+
+    try:
+        sender.run()
+    except KeyboardInterrupt:
+        print "Interrupted"
