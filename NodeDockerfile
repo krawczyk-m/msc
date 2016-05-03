@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     && cd python-netfilterqueue-master \
     && python setup.py install \
     && pip install scapy \
+    && pip install transitions \
     && rm -rf nfqueue.zip python-netfilterqueue-master \
     && apt-get purge -y --auto-remove wget unzip
 
